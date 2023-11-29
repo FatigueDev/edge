@@ -1,5 +1,4 @@
 defmodule Edge.Dice do
-  use GenServer
 
   defmodule DicePool do
     defstruct [
@@ -11,33 +10,15 @@ defmodule Edge.Dice do
       proficiency: 0,
       challenge: 0,
       force: 0,
-      advantage: 0,
-      threat: 0,
       success: 0,
       failure: 0,
+      advantage: 0,
+      threat: 0,
       triumph: 0,
-      despair: 0
+      despair: 0,
+      light: 0,
+      dark: 0
     ]
-  end
-
-  def start_link(state) do
-    GenServer.start_link(__MODULE__, state, name: __MODULE__)
-  end
-
-  @impl true
-  def init(arg) do
-    {:ok, arg}
-  end
-
-  @impl true
-  def handle_call({:raw, roll_request}, _, state) do
-    {:reply, roll_dicepool(roll_request), state}
-  end
-
-  @impl true
-  def handle_call({:readable, roll_request}, _, state) do
-    result = roll_dicepool(roll_request) |> generate_string()
-    {:reply, result, state}
   end
 
   def roll_dicepool(dicepool) when dicepool.boost > 0 do
@@ -82,33 +63,150 @@ defmodule Edge.Dice do
     |> roll_dicepool()
   end
 
+  def roll_dicepool(dicepool) when dicepool.force > 0 do
+    dicepool
+    |> roll_dice(:force)
+    |> remove_dice(:force)
+    |> roll_dicepool()
+  end
+
   def roll_dicepool(dicepool) do
     dicepool
     |> remove_wash()
   end
 
+  def generate_string(%DicePool{} = dicepool) do
+    {dicepool, "#{dicepool.sender} has rolled "}
+    |> generate_success_failure_string()
+    |> generate_advantage_threat_string()
+    |> generate_triumph_despair_string()
+    |> generate_light_dark_string()
+
+  end
+
+  defp generate_success_failure_string({%DicePool{} = dicepool, result}) when dicepool.success == 0 and dicepool.failure == 0 do
+    {dicepool, result <> "a failure wash"}
+  end
+
+  defp generate_success_failure_string({%DicePool{} = dicepool, result}) when dicepool.success == 1 do
+    {dicepool, result <> "a success"}
+  end
+
+  defp generate_success_failure_string({%DicePool{} = dicepool, result}) when dicepool.success > 0 do
+    {dicepool, result <> "#{dicepool.success} successes"}
+  end
+
+  defp generate_success_failure_string({%DicePool{} = dicepool, result}) when dicepool.failure == 1 do
+    {dicepool, result <> "a failure"}
+  end
+
+  defp generate_success_failure_string({%DicePool{} = dicepool, result}) when dicepool.failure > 1 do
+    {dicepool, result <> "#{dicepool.failure} failures"}
+  end
+
+  defp generate_advantage_threat_string({%DicePool{} = dicepool, result}) when dicepool.advantage == 0 and dicepool.threat == 0 do
+    {dicepool, result}
+  end
+
+  defp generate_advantage_threat_string({%DicePool{} = dicepool, result}) when dicepool.advantage == 1 do
+    {dicepool, result <> ", an advantage"}
+  end
+
+  defp generate_advantage_threat_string({%DicePool{} = dicepool, result}) when dicepool.advantage > 1 do
+    {dicepool, result <> ", #{dicepool.advantage} advantages"}
+  end
+
+  defp generate_advantage_threat_string({%DicePool{} = dicepool, result}) when dicepool.threat == 1 do
+    {dicepool, result <> ", a threat"}
+  end
+
+  defp generate_advantage_threat_string({%DicePool{} = dicepool, result}) when dicepool.threat > 1 do
+    {dicepool, result <> ", #{dicepool.threat} threat"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph > 1 and dicepool.despair > 1 do
+    {dicepool, result <> " with #{dicepool.triumph} triumphs and #{dicepool.despair} despairs!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph == 1 and dicepool.despair > 1 do
+    {dicepool, result <> " with a triumph and #{dicepool.despair} despairs!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph > 1 and dicepool.despair == 1 do
+    {dicepool, result <> " with #{dicepool.triumph} triumphs and a despair!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph == 1 do
+    {dicepool, result <> " and a triumph!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph > 1 do
+    {dicepool, result <> " and #{dicepool.triumph} triumphs!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.despair == 1 do
+    {dicepool, result <> " and a despair!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.despair > 1 do
+    {dicepool, result <> " and #{dicepool.despair} despair!"}
+  end
+
+  defp generate_triumph_despair_string({%DicePool{} = dicepool, result}) when dicepool.triumph == 0 and dicepool.despair == 0 do
+    {dicepool, result <> "."} # Honestly, just cap it off here.
+  end
+
+  defp generate_light_dark_string({%DicePool{} = dicepool, result}) when dicepool.light == 1 do
+    {dicepool, result <> " There was a single lightside point."}
+  end
+
+  defp generate_light_dark_string({%DicePool{} = dicepool, result}) when dicepool.light > 1 do
+    {dicepool, result <> " There were #{dicepool.light} lightside points."}
+  end
+
+  defp generate_light_dark_string({%DicePool{} = dicepool, result}) when dicepool.dark == 1 do
+    {dicepool, result <> " There was a single darkside point."}
+  end
+
+  defp generate_light_dark_string({%DicePool{} = dicepool, result}) when dicepool.dark > 1 do
+    {dicepool, result <> " There were #{dicepool.dark} darkside points."}
+  end
+
+  defp generate_light_dark_string({%DicePool{} = dicepool, result}) when dicepool.light == 0 and dicepool.dark == 0 do
+    {dicepool, result}
+  end
+
   defp remove_wash(dicepool) do
-    {advantage, threat} = if dicepool.advantage > dicepool.threat do {dicepool.advantage - dicepool.threat, 0} else {0, dicepool.threat - dicepool.advantage} end
-    {success, failure} = if dicepool.success > dicepool.failure do {dicepool.success - dicepool.failure, 0} else {0, dicepool.failure - dicepool.success} end
+
+    {success, failure} =
+      if dicepool.success > dicepool.failure do
+        {dicepool.success - dicepool.failure, 0}
+      else
+        {0, dicepool.failure - dicepool.success}
+      end
+
+    {advantage, threat} =
+      if dicepool.advantage > dicepool.threat do
+        {dicepool.advantage - dicepool.threat, 0}
+      else
+        {0, dicepool.threat - dicepool.advantage}
+      end
+
+    {light, dark} =
+      if dicepool.light > dicepool.dark do
+        {dicepool.light - dicepool.dark, 0}
+      else
+        {0, dicepool.dark - dicepool.light}
+      end
 
     dicepool
     |> Map.replace(:advantage, advantage)
     |> Map.replace(:threat, threat)
     |> Map.replace(:success, success)
     |> Map.replace(:failure, failure)
-  end
+    |> Map.replace(:light, light)
+    |> Map.replace(:dark, dark)
 
-  defp generate_string(dicepool) do
-    result_string = "#{dicepool.sender} rolled "
-    result_string = if dicepool.success > 0 do result_string <> "#{if dicepool.success == 1 do "a success" else "#{dicepool.success} successes" end}" else result_string end
-    result_string = if dicepool.success == 0 && dicepool.failure == 0 do result_string <> "a failed roll" else result_string end
-    result_string = if dicepool.failure > 0 do result_string <> "#{if dicepool.failure == 1 do "a failure" else "#{dicepool.failure} failures" end}" else result_string end
-    result_string = if dicepool.advantage > 0 do result_string <> ", #{if dicepool.advantage == 1 do "an advantage" else "#{dicepool.advantage} advantages" end}" else result_string end
-    result_string = if dicepool.threat > 0 do result_string <> ", #{if dicepool.threat == 1 do "a threat" else "#{dicepool.threat} threats" end}" else result_string end
-    result_string = if dicepool.triumph > 0 do result_string <> " and #{if dicepool.triumph == 1 do "a triumph" else "#{dicepool.triumph} triumphs" end}" else result_string end
-    result_string = if dicepool.despair > 0 do result_string <> " and #{if dicepool.despair == 1 do "a despair" else "#{dicepool.despair} despairs" end}" else result_string end
-    result_string = if dicepool.triumph == 0 and dicepool.despair == 0 do result_string <> "." else result_string <> "!" end
-    result_string
   end
 
   defp roll_dice(%DicePool{} = dicepool, :boost) do
@@ -146,7 +244,7 @@ defmodule Edge.Dice do
       9 -> dicepool |> add_result(:success, 1) |> add_result(:advantage, 1)
       10 -> dicepool |> add_result(:advantage, 2)
       11 -> dicepool |> add_result(:advantage, 2)
-      12 -> dicepool |> add_result(:triumph, 2)
+      12 -> dicepool |> add_result(:triumph, 1) |> add_result(:success, 1)
       _ -> dicepool
     end
   end
@@ -186,8 +284,25 @@ defmodule Edge.Dice do
       9 -> dicepool |> add_result(:failure, 1) |> add_result(:threat, 1)
       10 -> dicepool |> add_result(:threat, 2)
       11 -> dicepool |> add_result(:threat, 2)
-      12 -> dicepool |> add_result(:despair, 1)
+      12 -> dicepool |> add_result(:despair, 1) |> add_result(:failure, 1)
       _ -> dicepool
+    end
+  end
+
+  defp roll_dice(%DicePool{} = dicepool, :force) do
+    case :rand.uniform(12) do
+      1 -> dicepool |> add_result(:dark, 1)
+      2 -> dicepool |> add_result(:dark, 1)
+      3 -> dicepool |> add_result(:dark, 1)
+      4 -> dicepool |> add_result(:dark, 1)
+      5 -> dicepool |> add_result(:dark, 1)
+      6 -> dicepool |> add_result(:dark, 1)
+      7 -> dicepool |> add_result(:dark, 2)
+      8 -> dicepool |> add_result(:light, 1)
+      9 -> dicepool |> add_result(:light, 1)
+      10 -> dicepool |> add_result(:light, 2)
+      11 -> dicepool |> add_result(:light, 2)
+      12 -> dicepool |> add_result(:light, 2)
     end
   end
 
