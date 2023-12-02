@@ -21,58 +21,63 @@ defmodule Edge.Dice do
     ]
   end
 
-  def roll_dicepool(dicepool) when dicepool.boost > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.boost > 0 do
     dicepool
     |> roll_dice(:boost)
     |> remove_dice(:boost)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.ability > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.ability > 0 do
     dicepool
     |> roll_dice(:ability)
     |> remove_dice(:ability)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.proficiency > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.proficiency > 0 do
     dicepool
     |> roll_dice(:proficiency)
     |> remove_dice(:proficiency)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.setback > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.setback > 0 do
     dicepool
     |> roll_dice(:setback)
     |> remove_dice(:setback)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.difficulty > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.difficulty > 0 do
     dicepool
     |> roll_dice(:difficulty)
     |> remove_dice(:difficulty)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.challenge > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.challenge > 0 do
     dicepool
     |> roll_dice(:challenge)
     |> remove_dice(:challenge)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) when dicepool.force > 0 do
+  def roll_dicepool(%DicePool{} = dicepool) when dicepool.force > 0 do
     dicepool
     |> roll_dice(:force)
     |> remove_dice(:force)
     |> roll_dicepool()
   end
 
-  def roll_dicepool(dicepool) do
+  def roll_dicepool(%DicePool{} = dicepool) do
     dicepool
     |> remove_wash()
+  end
+
+  def roll_dicepool(dicepool) do
+    struct(DicePool, dicepool)
+    |> roll_dicepool
   end
 
   def generate_string(%DicePool{} = dicepool) do
