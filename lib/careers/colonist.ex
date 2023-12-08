@@ -1,7 +1,5 @@
 defmodule Edge.Career.Colonist do
-  use Edge.Career
-
-  def career_skills(), do: [
+  use Edge.Career, career_skills: [
     :charm,
     :deception,
     :core_worlds,

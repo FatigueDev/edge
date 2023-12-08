@@ -1,10 +1,9 @@
 defmodule Edge.Career.Technician do
-  use Edge.Career
-
-  def career_skills(), do: [
+  use Edge.Career, career_skills: [
     :astrogation,
     :computers,
     :coordination,
+    :discipline,
     :outer_rim,
     :mechanics,
     :perception,

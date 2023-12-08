@@ -1,7 +1,5 @@
 defmodule Edge.Career.BountyHunter do
-  use Edge.Career
-
-  def career_skills(), do: [
+  use Edge.Career, career_skills: [
     :athletics,
     :brawl,
     :perception,

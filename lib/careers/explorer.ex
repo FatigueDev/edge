@@ -1,7 +1,5 @@
 defmodule Edge.Career.Explorer do
-  use Edge.Career
-
-  def career_skills(), do: [
+  use Edge.Career, career_skills: [
     :astrogation,
     :cool,
     :lore,
