@@ -75,6 +75,30 @@ defmodule Edge.Dice do
     |> remove_wash()
   end
 
+  def roll_skill(%Edge.Character{characteristics: characteristics, skills: skills}, skill) do
+    #%Edge.Dicepool{}
+    #characteristics at skill.characteristic
+
+    # IO.inspect characteristics
+    # IO.inspect skill
+
+    # # %{character.characteristics | brawn: %Edge.Characteristic{rank: 3}}
+
+    IO.inspect(characteristics)
+
+    thing = Map.fetch(characteristics, skill.characteristic)
+
+    IO.inspect(thing)
+    IO.inspect(skill.rank)
+
+    # [characteristic] = Enum.filter(characteristics, fn %Edge.Characteristic{} = characteristic ->
+    #   # characteristic == skill.characteristic
+    #   IO.inspect(characteristic)
+    #   IO.inspect(skill.characteristic)
+    # end)
+
+  end
+
   def roll_dicepool(dicepool) do
     struct(DicePool, dicepool)
     |> roll_dicepool
